@@ -31,7 +31,13 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   fileFilter: (_, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/heic'];
+    const allowed = [
+      'image/jpeg',
+      'image/png',
+      'image/heic',
+      'image/heif',
+      'image/webp' // ← Androidスクショ用
+    ];
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -43,6 +49,7 @@ const upload = multer({
   }
 });
 
+
 // アップロード処理
 app.post('/upload', upload.single('photo'), async (req, res) => {
   const { comment } = req.body;
@@ -51,14 +58,21 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
   const ext = path.extname(filename).toLowerCase();
 
   try {
-    if (ext === '.heic' || req.file.mimetype === 'image/heic') {
-      const inputBuffer = fs.readFileSync(filepath);
-      const outputBuffer = await heicConvert({ buffer: inputBuffer, format: 'JPEG', quality: 1 });
-      filename = filename.replace(/\.heic$/i, '.jpg');
-      const outputPath = path.join(__dirname, 'uploads', filename);
-      fs.writeFileSync(outputPath, outputBuffer);
-      fs.unlinkSync(filepath);
-    } else {
+    if (ext === '.heic' || ext === '.heif' ||
+  req.file.mimetype === 'image/heic' ||
+  req.file.mimetype === 'image/heif'
+) {
+  const inputBuffer = fs.readFileSync(filepath);
+  const outputBuffer = await heicConvert({
+    buffer: inputBuffer,
+    format: 'JPEG',
+    quality: 1
+  });
+  filename = filename.replace(/\.(heic|heif)$/i, '.jpg');
+  const outputPath = path.join(__dirname, 'uploads', filename);
+  fs.writeFileSync(outputPath, outputBuffer);
+  fs.unlinkSync(filepath);
+} else {
       const resizedPath = path.join(__dirname, 'uploads', filename);
       await sharp(filepath).resize({ width: 800 }).toFile(resizedPath);
     }
