@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>写真マップ</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    svg { width: 100%; height: auto; display: block; }
+    .highlight { stroke: red; stroke-width: 4; fill: rgba(255,0,0,0.1); }
+    .room { fill: transparent; stroke: gray; stroke-width: 1; }
+    .photo-thumbnail { cursor: pointer; }
+    #modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center;
+    }
+    #modal img {
+      max-width: 90vw; max-height: 80vh; border: 4px solid white;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">地図上の写真表示</h2>
+  <div id="map-container">
+    <svg viewBox="0 0 720 1040">
+      <!-- 背景マップ画像 -->
+      <image href="map.png" x="0" y="0" width="720" height="1040" />
+
+      <!-- 部屋の枠定義（例） -->
+      <rect id="room-402" class="room" x="570" y="100" width="100" height="60" />
+      <rect id="room-403" class="room" x="570" y="260" width="100" height="60" />
+    </svg>
+  </div>
+
+  <div id="modal"><img id="modal-img"></div>
+
+  <script>
+    const roomPositions = {
+      "402": { x: 570, y: 100 },
+      "403": { x: 570, y: 260 },
+    };
+
+    async function loadPhotos() {
+      const res = await fetch('/photos');
+      const photos = await res.json();
+      const svg = document.querySelector('svg');
+
+      photos.forEach(photo => {
+        const pos = roomPositions[photo.room];
+        if (!pos) return;
+
+        const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        img.setAttribute("href", photo.url);
+        img.setAttribute("x", pos.x + 5);
+        img.setAttribute("y", pos.y + 5);
+        img.setAttribute("width", "60");
+        img.setAttribute("height", "60");
+        img.classList.add("photo-thumbnail");
+
+        img.addEventListener('click', () => {
+          document.querySelectorAll('.room').forEach(r => r.classList.remove('highlight'));
+          const roomEl = document.getElementById(`room-${photo.room}`);
+          if (roomEl) roomEl.classList.add('highlight');
+
+          const modal = document.getElementById('modal');
+          const modalImg = document.getElementById('modal-img');
+          modalImg.src = photo.url;
+          modal.style.display = 'flex';
+        });
+
+        svg.appendChild(img);
+      });
+    }
+
+    document.getElementById('modal').addEventListener('click', () => {
+      document.getElementById('modal').style.display = 'none';
+    });
+
+    loadPhotos();
+  </script>
+</body>
+</html>

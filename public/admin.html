@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>管理者画面 - 承認と部屋割</title>
+  <style>
+    body { font-family: sans-serif; margin: 40px; }
+    h2 { text-align: center; }
+    .photo-list { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+    .photo-card {
+      border: 1px solid #ccc; padding: 10px; width: 220px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .photo-card img { max-width: 200px; max-height: 200px; }
+    .photo-card select, .photo-card input[type=checkbox] {
+      margin-top: 10px; font-size: 14px;
+    }
+    .photo-card button {
+      margin-top: 10px; padding: 6px 12px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📋 写真一覧（承認・部屋割り）</h2>
+  <div class="photo-list" id="photoList"></div>
+
+  <script>
+    const rooms = ['402', '403', '404', '405'];
+
+    async function loadPhotos() {
+      const res = await fetch('/admin/photos');
+      const photos = await res.json();
+      const container = document.getElementById('photoList');
+      container.innerHTML = '';
+
+      photos.forEach(photo => {
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+
+        const img = document.createElement('img');
+        img.src = photo.url;
+
+        const comment = document.createElement('p');
+        comment.textContent = photo.comment;
+
+        const select = document.createElement('select');
+        rooms.forEach(room => {
+          const option = document.createElement('option');
+          option.value = room;
+          option.textContent = room;
+          if (room === photo.room) option.selected = true;
+          select.appendChild(option);
+        });
+
+        const approveLabel = document.createElement('label');
+        approveLabel.innerHTML = `<input type="checkbox" ${photo.approved ? 'checked' : ''}> 承認する`;
+
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = '保存';
+        saveBtn.onclick = async () => {
+          const approved = approveLabel.querySelector('input').checked;
+          const room = select.value;
+          await fetch('/admin/assign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: photo.id, room, approved })
+          });
+          alert('保存しました');
+        };
+
+        card.appendChild(img);
+        card.appendChild(comment);
+        card.appendChild(select);
+        card.appendChild(approveLabel);
+        card.appendChild(saveBtn);
+
+        container.appendChild(card);
+      });
+    }
+
+    loadPhotos();
+  </script>
+</body>
+</html>

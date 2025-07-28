@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>写真を投稿する</title>
+</head>
+<body>
+  <h1>📷 写真投稿フォーム</h1>
+  <form action="/upload" method="POST" enctype="multipart/form-data">
+    <input type="text" name="comment" placeholder="コメント（任意）" /><br><br>
+    
+    <input type="file" name="photo" accept="image/*" capture="environment" required /><br><br>
+    <button type="submit">アップロード</button>
+  </form>
+</body>
+</html>
