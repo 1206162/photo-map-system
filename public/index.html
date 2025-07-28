@@ -1,17 +1,13 @@
+/* index.html */
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>写真を投稿する</title>
-</head>
+<head><meta charset="UTF-8"><title>写真アップロード</title></head>
 <body>
-  <h1>📷 写真投稿フォーム</h1>
+  <h2>写真をアップロード</h2>
   <form action="/upload" method="POST" enctype="multipart/form-data">
-    <input type="text" name="comment" placeholder="コメント（任意）" /><br><br>
-    
-    <input type="file" name="photo" accept="image/*" capture="environment" required /><br><br>
-    <button type="submit">アップロード</button>
+    <label>写真: <input type="file" name="photo" required></label><br>
+    <label>コメント: <input type="text" name="comment"></label><br>
+    <button type="submit">送信</button>
   </form>
 </body>
 </html>

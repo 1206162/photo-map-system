@@ -6,7 +6,6 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 const heicConvert = require('heic-convert');
-const basicAuth = require('express-basic-auth');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -15,12 +14,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
-
-
-app.use('/admin.html', basicAuth({
-  users: { 'admin': 'password123' },
-  challenge: true
-}));
 
 // メモリ上の仮DB
 let photoDB = [];
