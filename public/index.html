@@ -1,13 +1,86 @@
-
 <!DOCTYPE html>
 <html lang="ja">
-<head><meta charset="UTF-8"><title>写真アップロード</title></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>写真アップロード</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background: #f9f9f9;
+      text-align: center;
+    }
+
+    form {
+      max-width: 480px;
+      margin: auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    input[type="file"],
+    textarea,
+    button {
+      width: 100%;
+      margin: 10px 0;
+      font-size: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    #loading {
+      display: none;
+      font-size: 16px;
+      color: #333;
+      margin-top: 10px;
+    }
+  </style>
+</head>
 <body>
+
   <h2>写真をアップロード</h2>
-  <form action="/upload" method="POST" enctype="multipart/form-data">
-    <label>写真: <input type="file" name="photo" required></label><br>
-    <label>コメント: <input type="text" name="comment"></label><br>
-    <button type="submit">送信</button>
+
+  <div id="loading">アップロード中です…</div>
+
+  <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+    <input type="file" name="photo" required>
+    <textarea name="comment" placeholder="コメントを入力してください"></textarea>
+    <button type="submit">アップロード</button>
   </form>
+
+  <script>
+    const form = document.getElementById('upload-form');
+    const loading = document.getElementById('loading');
+
+    form.addEventListener('submit', () => {
+      loading.style.display = 'block';
+    });
+  </script>
+
 </body>
 </html>
+
+

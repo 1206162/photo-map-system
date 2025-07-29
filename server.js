@@ -73,9 +73,15 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
   fs.writeFileSync(outputPath, outputBuffer);
   fs.unlinkSync(filepath);
 } else {
-      const resizedPath = path.join(__dirname, 'uploads', filename);
-      await sharp(filepath).resize({ width: 800 }).toFile(resizedPath);
-    }
+       // ✅ 出力先を別ファイルにしてから元を削除（エラー防止）
+  const tempPath = filepath + '_resized';
+  await sharp(filepath)
+    .resize({ width: 800 })
+    .toFile(tempPath);
+
+  fs.unlinkSync(filepath); // 元を削除
+  fs.renameSync(tempPath, filepath); // 正式な名前に戻す
+}
 
     const photo = {
       id: Date.now(),
