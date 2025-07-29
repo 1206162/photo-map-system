@@ -14,7 +14,7 @@
       background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center;
     }
     #modal img {
-      max-width: 90vw; max-height: 80vh; border: 4px solid white;
+      max-width: 145vw; max-height: 115vh; border: 4px solid white;
     }
   </style>
 </head>
@@ -24,18 +24,18 @@
     <svg viewBox="0 0 720 1040">
       <image href="map.png" x="0" y="0" width="720" height="1040" />
       <!-- 部屋枠 -->
-      <rect id="room-402" class="room" x="420" y="0" width="120" height="230" />
-      <rect id="room-403" class="room" x="415" y="370" width="125" height="115" />
-      <rect id="room-404" class="room" x="415" y="485" width="125" height="115" />
-      <rect id="room-405" class="room" x="415" y="600" width="125" height="115" />
-      <rect id="room-406" class="room" x="415" y="715" width="125" height="115" />
-      <rect id="room-407" class="room" x="150" y="825" width="115" height="75" />
-      <rect id="room-408" class="room" x="150" y="750" width="120" height="75" />
-      <rect id="room-409" class="room" x="150" y="675" width="120" height="75" />
-      <rect id="room-410" class="room" x="150" y="600" width="200" height="75" />
-      <rect id="room-411" class="room" x="150" y="405" width="120" height="105" />
-      <rect id="room-412" class="room" x="150" y="300" width="120" height="105" />
-      <rect id="room-413" class="room" x="150" y="180" width="200" height="180" />
+      <rect id="room-402" class="room" x="430" y="0" width="130" height="250" />
+      <rect id="room-403" class="room" x="415" y="390" width="145" height="115" />
+      <rect id="room-404" class="room" x="415" y="505" width="145" height="115" />
+      <rect id="room-405" class="room" x="415" y="620" width="145" height="115" />
+      <rect id="room-406" class="room" x="415" y="735" width="145" height="115" />
+      <rect id="room-407" class="room" x="150" y="845" width="140" height="75" />
+      <rect id="room-408" class="room" x="150" y="770" width="210" height="75" />
+      <rect id="room-409" class="room" x="150" y="695" width="210" height="75" />
+      <rect id="room-410" class="room" x="150" y="620" width="210" height="75" />
+      <rect id="room-411" class="room" x="150" y="420" width="140" height="110" />
+      <rect id="room-412" class="room" x="150" y="310" width="140" height="110" />
+      <rect id="room-413" class="room" x="150" y="80" width="210" height="180" />
     </svg>
   </div>
 
@@ -44,54 +44,79 @@
 
   <script>
     const roomPositions = {
-      "402": { x: 420, y: 0 },
-      "403": { x: 415, y: 370 },
-      "404": { x: 415, y: 485 },
-      "405": { x: 415, y: 600 },
-      "406": { x: 415, y: 715 },
-      "407": { x: 150, y: 825 },
-      "408": { x: 150, y: 750 },
-      "409": { x: 150, y: 675 },
-      "410": { x: 150, y: 600 },
-      "411": { x: 150, y: 405 },
-      "412": { x: 150, y: 300 },
-      "413": { x: 150, y: 180 }
+      "402": { x: 430, y: 0 },
+      "403": { x: 415, y: 390 },
+      "404": { x: 415, y: 505 },
+      "405": { x: 415, y: 620 },
+      "406": { x: 415, y: 735 },
+      "407": { x: 150, y: 845 },
+      "408": { x: 150, y: 770 },
+      "409": { x: 150, y: 695 },
+      "410": { x: 150, y: 620 },
+      "411": { x: 150, y: 420 },
+      "412": { x: 150, y: 310 },
+      "413": { x: 150, y: 80 }
     };
 
     let allPhotos = [];
 
     async function loadPhotos() {
-      const res = await fetch('/photos');
-      const photos = await res.json();
-      allPhotos = photos;
-      const svg = document.querySelector('svg');
+  const res = await fetch('/photos');
+  const photos = await res.json();
+  allPhotos = photos;
+  const svg = document.querySelector('svg');
 
-      photos.forEach(photo => {
-        const pos = roomPositions[photo.room];
-        if (!pos) return;
+  // 各部屋に属する写真をまとめておく
+  const roomGroups = {};
 
-        const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-        img.setAttribute("href", photo.url);
-        img.setAttribute("x", pos.x + 5);
-        img.setAttribute("y", pos.y + 5);
-        img.setAttribute("width", "60");
-        img.setAttribute("height", "60");
-        img.classList.add("photo-thumbnail");
-
-        img.addEventListener('click', () => {
-          document.querySelectorAll('.room').forEach(r => r.classList.remove('highlight'));
-          const roomEl = document.getElementById(`room-${photo.room}`);
-          if (roomEl) roomEl.classList.add('highlight');
-
-          const modal = document.getElementById('modal');
-          const modalImg = document.getElementById('modal-img');
-          modalImg.src = photo.url;
-          modal.style.display = 'flex';
-        });
-
-        svg.appendChild(img);
-      });
+  photos.forEach(photo => {
+    if (!photo.room) return;
+    if (!roomGroups[photo.room]) {
+      roomGroups[photo.room] = [];
     }
+    roomGroups[photo.room].push(photo);
+  });
+
+  // 各部屋ごとに処理
+  Object.entries(roomGroups).forEach(([roomId, photoList]) => {
+    const pos = roomPositions[roomId];
+    if (!pos) return;
+
+    // 新しい順にソート
+    photoList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // 表示する最大枚数を制限（左右別に最大10）
+    const isRight = pos.x > 360;
+    const displayPhotos = photoList.slice(0, 10);
+
+    displayPhotos.forEach((photo, index) => {
+      const imgX = isRight ? pos.x + 70 : pos.x - 70;
+      const imgY = pos.y + index * 70;
+
+      const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+      img.setAttribute("href", photo.url);
+      img.setAttribute("x", imgX);
+      img.setAttribute("y", imgY);
+      img.setAttribute("width", "60");
+      img.setAttribute("height", "60");
+      img.classList.add("photo-thumbnail");
+
+      img.addEventListener('click', () => {
+        document.querySelectorAll('.room').forEach(r => r.classList.remove('highlight'));
+        const roomEl = document.getElementById(`room-${roomId}`);
+        if (roomEl) roomEl.classList.add('highlight');
+
+        const modal = document.getElementById('modal');
+        const modalImg = document.getElementById('modal-img');
+        modalImg.src = photo.url;
+        modal.style.display = 'flex';
+      });
+
+      svg.appendChild(img);
+    });
+  });
+}
+
 
     document.getElementById('modal').addEventListener('click', () => {
       document.getElementById('modal').style.display = 'none';
