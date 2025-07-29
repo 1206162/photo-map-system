@@ -22,10 +22,8 @@
   <h2 style="text-align:center;">地図上の写真表示</h2>
   <div id="map-container">
     <svg viewBox="0 0 720 1040">
-      <!-- 背景マップ画像 -->
       <image href="map.png" x="0" y="0" width="720" height="1040" />
-
-      <!-- 部屋の枠定義（例） -->
+      <!-- 部屋枠 -->
       <rect id="room-402" class="room" x="420" y="0" width="120" height="230" />
       <rect id="room-403" class="room" x="415" y="370" width="125" height="115" />
       <rect id="room-404" class="room" x="415" y="485" width="125" height="115" />
@@ -41,6 +39,7 @@
     </svg>
   </div>
 
+  <div id="room-gallery" style="text-align:center; margin: 20px;"></div>
   <div id="modal"><img id="modal-img"></div>
 
   <script>
@@ -48,20 +47,23 @@
       "402": { x: 420, y: 0 },
       "403": { x: 415, y: 370 },
       "404": { x: 415, y: 485 },
-　　　 "405": { x: 415, y: 600 },
+      "405": { x: 415, y: 600 },
       "406": { x: 415, y: 715 },
-    　"407": { x: 150, y: 825 },
-    　"408": { x: 150, y: 750 },
-    　"409": { x: 150, y: 675 },
-    　"410": { x: 150, y: 600 },
-    　"411": { x: 150, y: 405 },
-    　"412": { x: 150, y: 300 },
-    　"413": { x: 150, y: 180 }
+      "407": { x: 150, y: 825 },
+      "408": { x: 150, y: 750 },
+      "409": { x: 150, y: 675 },
+      "410": { x: 150, y: 600 },
+      "411": { x: 150, y: 405 },
+      "412": { x: 150, y: 300 },
+      "413": { x: 150, y: 180 }
     };
+
+    let allPhotos = [];
 
     async function loadPhotos() {
       const res = await fetch('/photos');
       const photos = await res.json();
+      allPhotos = photos;
       const svg = document.querySelector('svg');
 
       photos.forEach(photo => {
@@ -93,6 +95,40 @@
 
     document.getElementById('modal').addEventListener('click', () => {
       document.getElementById('modal').style.display = 'none';
+    });
+
+    document.querySelectorAll('.room').forEach(roomRect => {
+      roomRect.addEventListener('click', () => {
+        const roomId = roomRect.id.replace('room-', '');
+        document.querySelectorAll('.room').forEach(r => r.classList.remove('highlight'));
+        roomRect.classList.add('highlight');
+
+        const gallery = document.getElementById('room-gallery');
+        if (!gallery) return;
+
+        gallery.innerHTML = '';
+        const photosInRoom = allPhotos.filter(p => p.room === roomId);
+
+        if (photosInRoom.length === 0) {
+          gallery.innerHTML = `<p>部屋 ${roomId} に写真はありません</p>`;
+          return;
+        }
+
+        photosInRoom.forEach(photo => {
+          const img = document.createElement('img');
+          img.src = photo.url;
+          img.style.width = '100px';
+          img.style.margin = '5px';
+          img.style.cursor = 'pointer';
+          img.addEventListener('click', () => {
+            const modal = document.getElementById('modal');
+            const modalImg = document.getElementById('modal-img');
+            modalImg.src = photo.url;
+            modal.style.display = 'flex';
+          });
+          gallery.appendChild(img);
+        });
+      });
     });
 
     loadPhotos();

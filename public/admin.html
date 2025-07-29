@@ -47,24 +47,3 @@
     loadPhotos();
   </script>
 </body>
-</html>
-          const room = document.getElementById(`room-${photo.room}`);
-          if (room) {
-            room.classList.add('highlight');
-          }
-          const modal = document.getElementById('modal');
-          const modalImg = document.getElementById('modal-img');
-          modalImg.src = photo.url;
-          modal.style.display = 'flex';
-        });
-
-        svg.appendChild(img);
-      });
-    }
-
-    document.getElementById('modal').addEventListener('click', () => {
-      document.getElementById('modal').style.display = 'none';
-    });
-
-    loadPhotos();
-  </script>
