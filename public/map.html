@@ -2,24 +2,57 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>写真マップ</title>
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>写真一覧とマップ表示</title>
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 0; }
-    svg { width: 100%; height: auto; display: block; }
-    .highlight { stroke: red; stroke-width: 4; fill: rgba(255,0,0,0.1); }
-    .room { fill: transparent; stroke: gray; stroke-width: 3; }
-    .photo-thumbnail { cursor: pointer; }
-    #modal {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center;
+    body { 
+    font-family: sans-serif; margin: 0; padding: 16px; background: #f5f5f5; 
     }
-   
+    #gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+    .photo-thumb {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: opacity 0.3s;
+      cursor: pointer;
+    }
+    .viewed {
+      opacity: 0.5;
+    }
+     #map-view {
+      display: none;
+      text-align: center;
+    }
+    #map-view h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    svg {
+      width: 100%;
+      max-width: 720px;
+      height: auto;
+      touch-action: manipulation;
+    }
+    .room {
+      fill: transparent;
+      stroke: transparent;
+      stroke-width: 1;
+    }
+    .highlight { stroke: red; stroke-width: 4; fill: rgba(255,0,0,0.1); }
   </style>
 </head>
 <body>
-  <h2 style="text-align:center;">地図上の写真表示</h2>
-  <div id="map-container">
-    <svg viewBox="0 0 720 1040">
+  
+  <div id="gallery"></div>
+
+  <div id="map-view">
+    <h3>該当する部屋</h3>
+    <svg viewBox="0 0 720 1040" id="map-svg">
       <image href="map.png" x="0" y="0" width="720" height="1040" />
       <!-- 部屋枠 -->
       <rect id="room-402" class="room" x="430" y="0" width="130" height="250" />
@@ -35,123 +68,46 @@
       <rect id="room-412" class="room" x="150" y="310" width="140" height="113" />
       <rect id="room-413" class="room" x="150" y="80" width="210" height="170" />
     </svg>
+       <p style="font-size: 14px; color: #888;">どこかをタップして戻る</p>
   </div>
+ <script>
+    const roomList = ['402','403','404','405','406','407','408','409','410','411','412','413'];
+    const gallery = document.getElementById('gallery');
+    const mapView = document.getElementById('map-view');
+    const mapSvg = document.getElementById('map-svg');
 
-  <div id="room-gallery" style="text-align:center; margin: 20px;"></div>
-  <div id="modal"><img id="modal-img"></div>
-
-  <script>
-    const roomPositions = {
-      "402": { x: 430, y: 0 },
-      "403": { x: 415, y: 390 },
-      "404": { x: 415, y: 505 },
-      "405": { x: 415, y: 620 },
-      "406": { x: 415, y: 735 },
-      "407": { x: 150, y: 851 },
-      "408": { x: 150, y: 774 },
-      "409": { x: 150, y: 697 },
-      "410": { x: 150, y: 620 },
-      "411": { x: 150, y: 423 },
-      "412": { x: 150, y: 310 },
-      "413": { x: 150, y: 80 }
-    };
-
-    let allPhotos = [];
+    let viewedPhotos = new Set();
 
     async function loadPhotos() {
-  const res = await fetch('/photos');
-  const photos = await res.json();
-  allPhotos = photos;
-  const svg = document.querySelector('svg');
+      const res = await fetch('/photos');
+      const photos = await res.json();
 
-  // 各部屋に属する写真をまとめておく
-  const roomGroups = {};
+      photos.forEach(photo => {
+        const img = document.createElement('img');
+        img.src = photo.url;
+        img.className = 'photo-thumb';
+        if (viewedPhotos.has(photo.id)) img.classList.add('viewed');
 
-  photos.forEach(photo => {
-    if (!photo.room) return;
-    if (!roomGroups[photo.room]) {
-      roomGroups[photo.room] = [];
-    }
-    roomGroups[photo.room].push(photo);
-  });
+        img.addEventListener('click', () => {
+          gallery.style.display = 'none';
+          mapView.style.display = 'block';
 
-  // 各部屋ごとに処理
-  Object.entries(roomGroups).forEach(([roomId, photoList]) => {
-    const pos = roomPositions[roomId];
-    if (!pos) return;
+          document.querySelectorAll('.room').forEach(r => r.classList.remove('highlight'));
+          const roomEl = document.getElementById(`room-${photo.room}`);
+          if (roomEl) roomEl.classList.add('highlight');
 
-    // 新しい順にソート
-    photoList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-    // 表示する最大枚数を制限（左右別に最大10）
-    const isRight = pos.x > 360;
-    const displayPhotos = photoList.slice(0, 10);
-
-    displayPhotos.forEach((photo, index) => {
-      const imgX = isRight ? pos.x + 110 : pos.x - 110;
-      const imgY = pos.y + index * 110;
-
-      const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-      img.setAttribute("href", photo.url);
-      img.setAttribute("x", imgX);
-      img.setAttribute("y", imgY);
-      img.setAttribute("width", "100");
-      img.setAttribute("height", "100");
-      img.classList.add("photo-thumbnail");
-
-      img.addEventListener('click', () => {
-        document.querySelectorAll('.room').forEach(r => r.classList.remove('highlight'));
-        const roomEl = document.getElementById(`room-${roomId}`);
-        if (roomEl) roomEl.classList.add('highlight');
-
-        const modal = document.getElementById('modal');
-        const modalImg = document.getElementById('modal-img');
-        modalImg.src = photo.url;
-        modal.style.display = 'flex';
-      });
-
-      svg.appendChild(img);
-    });
-  });
-}
-
-
-    document.getElementById('modal').addEventListener('click', () => {
-      document.getElementById('modal').style.display = 'none';
-    });
-
-    document.querySelectorAll('.room').forEach(roomRect => {
-      roomRect.addEventListener('click', () => {
-        const roomId = roomRect.id.replace('room-', '');
-        document.querySelectorAll('.room').forEach(r => r.classList.remove('highlight'));
-        roomRect.classList.add('highlight');
-
-        const gallery = document.getElementById('room-gallery');
-        if (!gallery) return;
-
-        gallery.innerHTML = '';
-        const photosInRoom = allPhotos.filter(p => p.room === roomId);
-
-        if (photosInRoom.length === 0) {
-          gallery.innerHTML = `<p>部屋 ${roomId} に写真はありません</p>`;
-          return;
-        }
-
-        photosInRoom.forEach(photo => {
-          const img = document.createElement('img');
-          img.src = photo.url;
-          img.style.width = '100px';
-          img.style.margin = '5px';
-          img.style.cursor = 'pointer';
-          img.addEventListener('click', () => {
-            const modal = document.getElementById('modal');
-            const modalImg = document.getElementById('modal-img');
-            modalImg.src = photo.url;
-            modal.style.display = 'flex';
-          });
-          gallery.appendChild(img);
+          viewedPhotos.add(photo.id);
+          img.classList.add('viewed');
         });
+
+        gallery.appendChild(img);
       });
+    }
+
+    // マップ画面クリックで戻る
+    mapSvg.addEventListener('click', () => {
+      mapView.style.display = 'none';
+      gallery.style.display = 'grid';
     });
 
     loadPhotos();

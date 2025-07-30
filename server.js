@@ -76,6 +76,7 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
        // ✅ 出力先を別ファイルにしてから元を削除（エラー防止）
   const tempPath = filepath + '_resized';
   await sharp(filepath)
+    .rotate()
     .resize({ width: 800 })
     .toFile(tempPath);
 

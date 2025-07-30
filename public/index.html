@@ -67,7 +67,20 @@
 
   <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
     <input type="file" name="photo" required>
-    <textarea name="comment" placeholder="コメントを入力してください"></textarea>
+    <textarea name="comment" placeholder="部屋の場所や番号がわかれば教えてください"></textarea>
+    <p style="font-size: 14px; color: #444; background: #f2f2f2; padding: 10px; border-radius: 8px; text-align: left">
+  ＜ご投稿にあたっての注意事項＞<br><br>
+  ・アップロードされた写真は、研究活動（論文・発表等）に使用される場合があります。<br>
+  ・写真の著作権は撮影者に帰属しますが、アップロードをもって本プロジェクトにおける無償使用・公開・編集等への同意があったものとみなします。<br>
+  ・投稿は匿名で行われ、こちらから投稿者を特定することはありません。<br>
+  ・写真に顔などの個人情報が含まれる場合、管理者の判断により掲載されない可能性があります。<br>
+  ・著作権や肖像権を侵害する写真の投稿は禁止です。<br>
+  ・不適切な内容や他者を傷つける写真は掲載されません。<br>
+</p>
+<label>
+  <input type="checkbox" required>
+  上記の注意事項を読み、内容に同意します。
+</label><br><br>
     <button type="submit">アップロード</button>
   </form>
 
