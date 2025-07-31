@@ -6,78 +6,114 @@
   <style>
     body { font-family: sans-serif; margin: 20px; }
     .photo-list { display: flex; flex-wrap: wrap; gap: 20px; }
-    .photo-card { border: 1px solid #ccc; padding: 10px; width: 220px; }
-    .photo-card img { max-width: 200px; max-height: 200px; }
+    .photo-card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      width: 220px;
+      position: relative;
+    }
+    .photo-card img {
+      max-width: 200px;
+      max-height: 200px;
+      display: block;
+      margin: auto;
+    }
+    .photo-card label {
+      font-size: 1em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .saved-notice {
+      position: absolute;
+      bottom: 5px;
+      left: 5px;
+      background: #d4edda;
+      color: #155724;
+      padding: 4px 8px;
+      font-size: 0.9em;
+      border-radius: 4px;
+      display: none;
+    }
+    .room-select, .floor-select {
+      width: 100%;
+      margin-top: 5px;
+      font-size: 1em;
+    }
+    button {
+      margin-top: 8px;
+      width: 100%;
+      padding: 6px;
+      font-size: 1em;
+    }
   </style>
 </head>
 <body>
   <h2>写真管理</h2>
-
-  <!-- ✅ フィルタチェックボックス -->
-  <label>
-    <input type="checkbox" id="filter-unapproved">
-    未承認の写真のみ表示
-  </label>
-
   <div class="photo-list" id="photoList"></div>
 
   <script>
-    const rooms = ['402', '403', '404', '405' , '406', '407', '408', '409', '410', '411', '412', '413'];
+    const rooms = ['402', '403', '404', '405', '406', '407', '408', '409', '410', '411', '412', '413'];
+    const roomOptions = ['none', ...rooms];
 
-    // ✅ チェックボックスの変化で再読み込み
-    document.getElementById('filter-unapproved').addEventListener('change', fetchAndRenderPhotos);
-
-    // ✅ データ取得＆フィルタ処理
-    async function fetchAndRenderPhotos() {
+    async function loadPhotos() {
       const res = await fetch('/admin/photos');
       const photos = await res.json();
-
-      const showUnapprovedOnly = document.getElementById('filter-unapproved').checked;
-      const filtered = showUnapprovedOnly ? photos.filter(p => !p.approved) : photos;
-
-      renderPhotoList(filtered);
-    }
-
-    // ✅ 表示描画ロジック
-    function renderPhotoList(photos) {
       const container = document.getElementById('photoList');
       container.innerHTML = '';
 
       photos.forEach(photo => {
         const card = document.createElement('div');
         card.className = 'photo-card';
-
         card.innerHTML = `
           <img src="${photo.url}" alt="photo">
           <p>${photo.comment || ''}</p>
-          <select>
-            ${rooms.map(r => `<option value="${r}" ${r === photo.room ? 'selected' : ''}>${r}</option>`).join('')}
-          </select>
-          <label><input type="checkbox" ${photo.approved ? 'checked' : ''}> 承認</label>
+
+          <label>階:
+            <select class="floor-select">
+              <option value="1" ${photo.floor == 1 ? 'selected' : ''}>1階</option>
+              <option value="2" ${photo.floor == 2 ? 'selected' : ''}>2階</option>
+            </select>
+          </label>
+
+          <label>部屋:
+            <select class="room-select">
+              ${roomOptions.map(r => {
+                const label = r === 'none' ? '掲載しない' : r;
+                const selected = (photo.room === r || (photo.room == null && r === 'none')) ? 'selected' : '';
+                return `<option value="${r}" ${selected}>${label}</option>`;
+              }).join('')}
+            </select>
+          </label>
+
           <button>保存</button>
+          <div class="saved-notice">保存しました</div>
         `;
 
         const button = card.querySelector('button');
         button.onclick = async () => {
-          const approved = card.querySelector('input[type="checkbox"]').checked;
-          const room = card.querySelector('select').value;
+          const room = card.querySelector('.room-select').value;
+          const floor = parseInt(card.querySelector('.floor-select').value);
 
           await fetch('/admin/assign', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: photo.id, room, approved })
+            body: JSON.stringify({ id: photo.id, room, floor })
           });
 
-          alert('保存しました');
-          fetchAndRenderPhotos(); // 再読み込み（フィルタ状態維持）
+          const notice = card.querySelector('.saved-notice');
+          notice.style.display = 'block';
+          setTimeout(() => {
+            notice.style.display = 'none';
+          }, 2000);
         };
 
         container.appendChild(card);
       });
     }
 
-    // ✅ 初期表示
-    fetchAndRenderPhotos();
+    loadPhotos();
   </script>
 </body>
 </html>
