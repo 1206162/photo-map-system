@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>アップロードテスト</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    input, textarea, button {
+      display: block;
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+    #preview {
+      margin-top: 10px;
+      max-width: 200px;
+    }
+    #loading {
+      display: none;
+      margin-top: 10px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h2>画像アップロードテスト</h2>
+
+  <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+    <label>画像ファイルを選択：</label>
+    <input type="file" name="photo" accept="image/*" required>
+
+    <label>コメント（任意）：</label>
+    <textarea name="comment" placeholder="例：テスト画像"></textarea>
+
+    <button type="submit">アップロード</button>
+  </form>
+
+  <div id="loading">アップロード中です…</div>
+
+  <script>
+    const form = document.getElementById('upload-form');
+    const loading = document.getElementById('loading');
+
+    form.addEventListener('submit', () => {
+      loading.style.display = 'block';
+    });
+  </script>
+</body>
+</html>

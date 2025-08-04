@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
   filename: (_, file, cb) => {
     const timestamp = Date.now();
     const safeName = file.originalname.replace(/\s/g, '_');
-    cb(null, `${timestamp}-${safeName}`);
+    cb(null, `${timestamp}${ext}`);
   }
 });
 
@@ -52,10 +52,9 @@ const upload = multer({
 
 // アップロード処理
 app.post('/upload', upload.single('photo'), async (req, res) => {
-  const { comment } = req.body;
-  let filename = req.file.filename;
-  const filepath = path.join(__dirname, 'uploads', filename);
-  const ext = path.extname(filename).toLowerCase();
+   const { comment } = req.body;
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  let finalFilename;
 
   try {
     if (ext === '.heic' || ext === '.heif' ||
@@ -68,25 +67,29 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
     format: 'JPEG',
     quality: 1
   });
-  filename = filename.replace(/\.(heic|heif)$/i, '.jpg');
-  const outputPath = path.join(__dirname, 'uploads', filename);
-  fs.writeFileSync(outputPath, outputBuffer);
-  fs.unlinkSync(filepath);
-} else {
-       // ✅ 出力先を別ファイルにしてから元を削除（エラー防止）
-  const tempPath = filepath + '_resized';
-  await sharp(filepath)
-    .rotate()
-    .resize({ width: 800 })
-    .toFile(tempPath);
+  const newFilename = `${Date.now()}.jpg`;  // ★ 常に新規タイムスタンプ名で保存
+  const outputPath = path.join(__dirname, 'uploads', newFilename);
 
-  fs.unlinkSync(filepath); // 元を削除
-  fs.renameSync(tempPath, filepath); // 正式な名前に戻す
+  fs.writeFileSync(outputPath, outputBuffer);
+  fs.unlinkSync(req.file.path); // 元のHEICを削除
+  
+} else {
+  finalFilename = `${Date.now()}${ext}`;
+      const filepath = path.join(__dirname, 'uploads', finalFilename);
+      const tempPath = filepath + '_resized';
+
+      await sharp(req.file.path)
+        .rotate()
+        .resize({ width: 800 })
+        .toFile(tempPath);
+
+      fs.unlinkSync(req.file.path);
+      fs.renameSync(tempPath, filepath);
 }
 
     const photo = {
       id: Date.now(),
-      url: `/uploads/${filename}`,
+      url: `/uploads/${finalFilename}`,
       comment,
       room: null,
       approved: false,
