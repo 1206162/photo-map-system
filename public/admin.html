@@ -18,12 +18,23 @@
       display: block;
       margin: auto;
     }
-    .photo-card label {
-      font-size: 1em;
+    .floor-buttons {
       display: flex;
-      align-items: center;
-      gap: 6px;
+      justify-content: space-between;
       margin-top: 6px;
+    }
+    .floor-button {
+      flex: 1;
+      margin: 2px;
+      padding: 5px;
+      font-size: 0.9em;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background-color: #f0f0f0;
+    }
+    .floor-button.selected {
+      background-color: #007bff;
+      color: white;
     }
     .saved-notice {
       position: absolute;
@@ -36,9 +47,9 @@
       border-radius: 4px;
       display: none;
     }
-    .room-select, .floor-select {
+    .room-select {
       width: 100%;
-      margin-top: 5px;
+      margin-top: 6px;
       font-size: 1em;
     }
     button {
@@ -66,17 +77,18 @@
       photos.forEach(photo => {
         const card = document.createElement('div');
         card.className = 'photo-card';
+
+        const currentFloor = parseInt(photo.floor) || 1;
+
         card.innerHTML = `
           <img src="${photo.url}" alt="photo">
           <p>${photo.comment || ''}</p>
 
-          <label>階:
-            <select class="floor-select">
-              <option value="1" ${photo.floor == 1 ? 'selected' : ''}>4階</option>
-              <option value="2" ${photo.floor == 2 ? 'selected' : ''}>10階</option>
-             <option value="2" ${photo.floor == 3 ? 'selected' : ''}>11階</option>
-            </select>
-          </label>
+          <div class="floor-buttons">
+            <button class="floor-button" data-value="1">4階</button>
+            <button class="floor-button" data-value="2">10階</button>
+            <button class="floor-button" data-value="3">11階</button>
+          </div>
 
           <label>部屋:
             <select class="room-select">
@@ -92,15 +104,28 @@
           <div class="saved-notice">保存しました</div>
         `;
 
+        // 選択されたfloorの初期表示
+        const buttons = card.querySelectorAll('.floor-button');
+        buttons.forEach(btn => {
+          if (parseInt(btn.dataset.value) === currentFloor) {
+            btn.classList.add('selected');
+          }
+
+          btn.addEventListener('click', () => {
+            buttons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+          });
+        });
+
         const button = card.querySelector('button');
         button.onclick = async () => {
           const room = card.querySelector('.room-select').value;
-          const floor = parseInt(card.querySelector('.floor-select').value);
+          const selectedFloor = parseInt(card.querySelector('.floor-button.selected')?.dataset.value) || 1;
 
           await fetch('/admin/assign', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: photo.id, room, floor })
+            body: JSON.stringify({ id: photo.id, room, floor: selectedFloor })
           });
 
           const notice = card.querySelector('.saved-notice');
