@@ -96,6 +96,7 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
     photoDB.push(photo);
     res.redirect('/thanks.html');
   } catch (err) {
+    
     console.error('アップロード失敗:', err);
     res.status(500).send('アップロードに失敗しました');
   }
