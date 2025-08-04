@@ -96,7 +96,7 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
     photoDB.push(photo);
     res.redirect('/thanks.html');
   } catch (err) {
-    
+
     console.error('アップロード失敗:', err);
     res.status(500).send('アップロードに失敗しました');
   }
@@ -104,7 +104,7 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
 
 // 承認された写真だけ取得
 app.get('/photos', (_, res) => {
-  res.json(photoDB.filter(p => p.approved));
+  res.json(photoDB.filter(p => p.approved && p.room && p.floor));
 });
 
 // 管理者画面：すべて取得
@@ -120,7 +120,7 @@ app.post('/admin/assign', (req, res) => {
   const photo = photoDB.find(p => p.id == id);
   if (photo) {
     photo.room = room;
-    photo.approved = approved;
+    photo.approved = approved ?? (room !== 'none');
     photo.floor = floor;
     res.json({ success: true });
   } else {
