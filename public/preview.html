@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>部屋座標プレビュー</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    svg { width: 100%; height: auto; display: block; background: #fafafa; }
+    .room { fill: rgba(0, 150, 255, 0.1); stroke: #007acc; stroke-width: 2; cursor: pointer; }
+    text { font-size: 12px; fill: #333; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">座標確認プレビュー</h2>
+  <svg id="floor-map" viewBox="0 0 720 1040"></svg>
+
+  <script>
+    const roomShapes = {
+        1: {
+        '402': { x: 430, y: 0, width: 130, height: 250 },
+        '403': { x: 415, y: 385, width: 145, height: 117 },
+        '404': { x: 415, y: 503, width: 145, height: 117 },
+        '405': { x: 415, y: 621, width: 145, height: 117 },
+        '406': { x: 415, y: 738, width: 145, height: 117 },
+        '407': { x: 150, y: 854, width: 140, height: 78 },
+        '408': { x: 150, y: 776, width: 215, height: 78 },
+        '409': { x: 150, y: 698, width: 215, height: 78 },
+        '410': { x: 150, y: 620, width: 215, height: 78 },
+        '411': { x: 150, y: 424, width: 142, height: 115 },
+        '412': { x: 150, y: 308, width: 142, height: 115},
+        '413': { x: 150, y: 80, width: 214, height: 170 }
+      },
+      2: {
+        '1004': { x: 417, y: 195, width: 143, height: 100 },
+        '1005': { x: 417, y: 295, width: 143, height: 100 },
+        '1008': { x: 460, y: 500, width: 100, height: 150 },
+        '1009': { x: 460, y: 650, width: 100, height: 150 },
+        '1020': { x: 150, y: 295, width: 143, height: 100 },
+        '1017': { x: 150, y: 500, width: 103, height: 150 },
+        
+      },
+      3: {
+        '1108': { x: 460, y: 500, width: 100, height: 150 },
+        '1119': { x: 150, y: 295, width: 143, height: 100 },
+        '1116': { x: 150, y: 500, width: 103, height: 150 },
+     }
+    };
+
+    const floor = 3; // ← 表示したい階をここで切り替え
+    const svg = document.getElementById('floor-map');
+
+    // 背景画像（階層に応じて切り替え可能）
+    const bg = document.createElementNS("http://www.w3.org/2000/svg", "image");
+    bg.setAttribute("href", `map${floor}.jpg`);
+    bg.setAttribute("x", "0");
+    bg.setAttribute("y", "0");
+    bg.setAttribute("width", "720");
+    bg.setAttribute("height", "1040");
+    svg.appendChild(bg);
+
+    // 部屋枠とラベルを描画
+    for (const [roomId, { x, y, width, height }] of Object.entries(roomShapes[floor])) {
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", x);
+      rect.setAttribute("y", y);
+      rect.setAttribute("width", width);
+      rect.setAttribute("height", height);
+      rect.setAttribute("class", "room");
+      svg.appendChild(rect);
+
+      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      label.setAttribute("x", x + 4);
+      label.setAttribute("y", y + 14);
+      label.textContent = roomId;
+      svg.appendChild(label);
+    }
+  </script>
+</body>
+</html>
