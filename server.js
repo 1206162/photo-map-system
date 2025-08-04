@@ -128,3 +128,19 @@ app.post('/admin/assign', (req, res) => {
 app.listen(port, () => {
   console.log(`サーバー起動: http://localhost:${port}`);
 });
+app.post('/admin/assign', (req, res) => {
+  const { id, room, approved, floor } = req.body;
+
+  console.log('受信:', req.body); // ←ログ追加でデバッグ
+
+  const photo = photoDB.find(p => p.id == id);
+  if (photo) {
+    photo.room = room;
+    photo.approved = approved;
+    photo.floor = floor;
+    res.json({ success: true });
+  } else {
+    console.warn('該当写真が見つかりません');
+    res.status(404).json({ error: '該当写真が見つかりません' });
+  }
+});

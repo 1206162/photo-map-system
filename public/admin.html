@@ -18,23 +18,12 @@
       display: block;
       margin: auto;
     }
-    .floor-buttons {
+    .photo-card label {
+      font-size: 1em;
       display: flex;
-      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
       margin-top: 6px;
-    }
-    .floor-button {
-      flex: 1;
-      margin: 2px;
-      padding: 5px;
-      font-size: 0.9em;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      background-color: #f0f0f0;
-    }
-    .floor-button.selected {
-      background-color: #007bff;
-      color: white;
     }
     .saved-notice {
       position: absolute;
@@ -49,8 +38,27 @@
     }
     .room-select {
       width: 100%;
-      margin-top: 6px;
+      margin-top: 5px;
       font-size: 1em;
+    }
+    .floor-buttons {
+      display: flex;
+      gap: 5px;
+      margin-top: 6px;
+    }
+    .floor-button {
+      flex: 1;
+      padding: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f0f0f0;
+    }
+    .floor-button.selected {
+      background: #007bff;
+      color: white;
+      font-weight: bold;
     }
     button {
       margin-top: 8px;
@@ -78,16 +86,16 @@
         const card = document.createElement('div');
         card.className = 'photo-card';
 
-        const currentFloor = parseInt(photo.floor) || 1;
+        const currentFloor = photo.floor || 1;
 
         card.innerHTML = `
           <img src="${photo.url}" alt="photo">
           <p>${photo.comment || ''}</p>
 
           <div class="floor-buttons">
-            <button class="floor-button" data-value="1">4階</button>
-            <button class="floor-button" data-value="2">10階</button>
-            <button class="floor-button" data-value="3">11階</button>
+            <button class="floor-button ${currentFloor === 1 ? 'selected' : ''}" data-value="1">4階</button>
+            <button class="floor-button ${currentFloor === 2 ? 'selected' : ''}" data-value="2">10階</button>
+            <button class="floor-button ${currentFloor === 3 ? 'selected' : ''}" data-value="3">11階</button>
           </div>
 
           <label>部屋:
@@ -104,35 +112,44 @@
           <div class="saved-notice">保存しました</div>
         `;
 
-        // 選択されたfloorの初期表示
-        const buttons = card.querySelectorAll('.floor-button');
-        buttons.forEach(btn => {
-          if (parseInt(btn.dataset.value) === currentFloor) {
-            btn.classList.add('selected');
-          }
+        const button = card.querySelector('button:not(.floor-button)');
+        const roomSelect = card.querySelector('.room-select');
+        const floorButtons = card.querySelectorAll('.floor-button');
 
+        let selectedFloor = currentFloor;
+
+        floorButtons.forEach(btn => {
           btn.addEventListener('click', () => {
-            buttons.forEach(b => b.classList.remove('selected'));
+            floorButtons.forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
+            selectedFloor = parseInt(btn.dataset.value);
           });
         });
 
-        const button = card.querySelector('button');
         button.onclick = async () => {
-          const room = card.querySelector('.room-select').value;
-          const selectedFloor = parseInt(card.querySelector('.floor-button.selected')?.dataset.value) || 1;
+          const room = roomSelect.value;
+          const approved = room !== 'none';
 
-          await fetch('/admin/assign', {
+          const res = await fetch('/admin/assign', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: photo.id, room, floor: selectedFloor })
+            body: JSON.stringify({
+              id: photo.id,
+              room,
+              floor: selectedFloor,
+              approved
+            })
           });
 
-          const notice = card.querySelector('.saved-notice');
-          notice.style.display = 'block';
-          setTimeout(() => {
-            notice.style.display = 'none';
-          }, 2000);
+          if (res.ok) {
+            const notice = card.querySelector('.saved-notice');
+            notice.style.display = 'block';
+            setTimeout(() => {
+              notice.style.display = 'none';
+            }, 2000);
+          } else {
+            alert('保存に失敗しました');
+          }
         };
 
         container.appendChild(card);
