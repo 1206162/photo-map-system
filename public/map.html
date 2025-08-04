@@ -73,6 +73,26 @@
       border: none;
       cursor: pointer;
     }
+    .map-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+}
+
+.map-wrapper img {
+  width: 100%;
+  display: block;
+}
+
+.map-wrapper svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
   </style>
 </head>
 <body>
@@ -83,8 +103,10 @@
   <div id="map-view" onclick="hideMap()">
     <div id="map-svg-container">
       <div class="map-image" id="map-floor-1">
+         <div class="map-wrapper">
         <img src="map1.jpg" style="width:100%;">
         <svg viewBox="0 0 720 1040">
+         </div>
           <!-- 例: <rect id="room-201" class="room" x="100" y="300" width="100" height="80"/> -->
         </svg>
       </div>
