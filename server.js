@@ -114,24 +114,7 @@ app.get('/admin/photos', (_, res) => {
 // 管理者：部屋割りと承認を設定
 app.post('/admin/assign', (req, res) => {
   const { id, room, approved, floor } = req.body;
-  const photo = photoDB.find(p => p.id == id);
-  if (photo) {
-    photo.room = room;
-    photo.approved = approved;
-    photo.floor = floor; // ← これを追加！
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ error: '該当写真が見つかりません' });
-  }
-});
-
-app.listen(port, () => {
-  console.log(`サーバー起動: http://localhost:${port}`);
-});
-app.post('/admin/assign', (req, res) => {
-  const { id, room, approved, floor } = req.body;
-
-  console.log('受信:', req.body); // ←ログ追加でデバッグ
+  console.log('受信:', req.body); // ← デバッグログ
 
   const photo = photoDB.find(p => p.id == id);
   if (photo) {
@@ -144,3 +127,7 @@ app.post('/admin/assign', (req, res) => {
     res.status(404).json({ error: '該当写真が見つかりません' });
   }
 });
+app.listen(port, () => {
+  console.log(`サーバー起動: http://localhost:${port}`);
+});
+
