@@ -2,97 +2,108 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>写真マップ</title>
+  <title>写真一覧と地図表示</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 0; }
-    svg { width: 100%; height: auto; display: block; }
-    .highlight { stroke: red; stroke-width: 4; fill: rgba(255,0,0,0.2); }
-    .room { fill: transparent; stroke: transparent; stroke-width: 1; cursor: pointer; }
-    .photo-thumbnail { cursor: pointer; }
-    #modal {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center;
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
     }
-    #modal-map { max-width: 95vw; max-height: 90vh; position: relative; }
-    #modal img {
-      max-width: 90vw; max-height: 80vh; border: 4px solid white;
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 10px;
     }
-    #floor-label {
-      position: absolute; top: 10px; right: 10px;
-      background: rgba(0,0,0,0.5); color: white;
-      padding: 6px 10px; border-radius: 5px; font-size: 1rem;
+    .gallery img {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      border-radius: 6px;
+      cursor: pointer;
     }
-    #gallery { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 10px; }
-    .thumb { width: 45vw; max-width: 180px; cursor: pointer; }
-    #back-button {
-      position: fixed; bottom: 10px; left: 10px;
-      background: #eee; padding: 8px 12px; border-radius: 6px;
-      font-size: 0.9rem; cursor: pointer;
+    #map-view {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #map-svg-container {
+      width: 100%;
+      max-width: 720px;
+    }
+    svg {
+      width: 100%;
+      height: auto;
+    }
+    .highlight {
+      stroke: red;
+      stroke-width: 4;
+      fill: rgba(255, 0, 0, 0.3);
+    }
+    .room {
+      fill: transparent;
+    }
+    .map-image {
+      display: none;
+    }
+    .map-image.active {
+      display: block;
+    }
+    .button-bar {
+      text-align: center;
+      margin: 15px;
+    }
+    .button-bar a, .button-bar button {
+      background: #007BFF;
+      color: white;
+      padding: 10px 16px;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      margin: 0 6px;
+      border: none;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h2 style="text-align:center;">写真一覧</h2>
-  <div id="gallery"></div>
+  <h2 style="text-align: center;">写真一覧</h2>
+  <div class="gallery" id="gallery"></div>
 
-  <div id="modal">
-    <div id="modal-map">
-      <div id="floor-label"></div>
-      <svg id="map-svg" viewBox="0 0 720 1040"></svg>
-      <div id="back-button">一覧に戻る</div>
+  <div class="button-bar">
+    <a href="upload.html">写真投稿画面に戻る</a>
+    <a href="https://docs.google.com/forms/your-form-url" target="_blank">アンケートに回答</a>
+  </div>
+
+  <div id="map-view" onclick="hideMap()">
+    <div id="map-svg-container">
+      <div class="map-image" id="map-floor-1">
+        <img src="map1.jpg" style="width:100%;">
+        <svg viewBox="0 0 720 1040">
+          <!-- 例: <rect id="room-201" class="room" x="100" y="300" width="100" height="80"/> -->
+        </svg>
+      </div>
+      <div class="map-image" id="map-floor-2">
+        <img src="map2.jpg" style="width:100%;">
+        <svg viewBox="0 0 720 1040">
+        </svg>
+      </div>
+      <div class="map-image" id="map-floor-3">
+        <img src="map3.jpg" style="width:100%;">
+        <svg viewBox="0 0 720 1040">
+        </svg>
+      </div>
     </div>
   </div>
 
   <script>
-    const floorBackgrounds = {
-      1: 'url("map1.jpg")',
-      2: 'url("map2.jpg")',
-      3: 'url("map3.jpg")'
-    };
-
-    let allPhotos = [];
-
-    async function loadPhotos() {
-      const res = await fetch('/photos');
-      allPhotos = await res.json();
-      const gallery = document.getElementById('gallery');
-      gallery.innerHTML = '';
-      allPhotos.forEach(photo => {
-        const img = document.createElement('img');
-        img.src = photo.url;
-        img.className = 'thumb';
-        img.addEventListener('click', () => showMap(photo));
-        gallery.appendChild(img);
-      });
-    }
-
-    function showMap(photo) {
-      const modal = document.getElementById('modal');
-      const svg = document.getElementById('map-svg');
-      const label = document.getElementById('floor-label');
-      const floor = photo.floor || 1;
-
-      // 背景変更
-      svg.innerHTML = `<image href="map${floor}.jpg" x="0" y="0" width="720" height="1040" />`;
-      label.innerText = `${floor}階`;
-
-      // ハイライト部屋追加
-      const roomId = photo.room;
-      const roomData = roomShapes[floor]?.[roomId];
-      if (roomData) {
-        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        Object.entries(roomData).forEach(([key, val]) => rect.setAttribute(key, val));
-        rect.classList.add('highlight');
-        svg.appendChild(rect);
-      }
-
-      modal.style.display = 'flex';
-    }
-
-    document.getElementById('back-button').addEventListener('click', () => {
-      document.getElementById('modal').style.display = 'none';
-    });
-
     const roomShapes = {
        1: {
         '402': { x: 430, y: 0, width: 130, height: 250 },
@@ -123,6 +134,53 @@
         '1116': { x: 150, y: 500, width: 103, height: 150 },
      }
     };
+
+    const maxPerRoom = 3;
+    const displayed = {}; // { floor_room: count }
+
+    async function loadPhotos() {
+      const res = await fetch('/photos');
+      const photos = await res.json();
+      const gallery = document.getElementById('gallery');
+
+      photos.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      photos.forEach(photo => {
+        if (!photo.room || !photo.floor) return;
+        const key = `${photo.floor}_${photo.room}`;
+        if (!displayed[key]) displayed[key] = 0;
+        if (displayed[key] >= maxPerRoom) return;
+        displayed[key]++;
+
+        const img = document.createElement('img');
+        img.src = photo.url;
+        img.alt = photo.comment || '';
+        img.addEventListener('click', () => showMap(photo.floor, photo.room));
+        gallery.appendChild(img);
+      });
+    }
+
+    function showMap(floor, room) {
+      document.querySelectorAll('.map-image').forEach(el => el.classList.remove('active'));
+      const mapDiv = document.getElementById(`map-floor-${floor}`);
+      if (!mapDiv) return;
+      mapDiv.classList.add('active');
+
+      const svg = mapDiv.querySelector('svg');
+      svg.innerHTML = '';
+      const shape = roomShapes[floor]?.[room];
+      if (shape) {
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        Object.entries(shape).forEach(([k, v]) => rect.setAttribute(k, v));
+        rect.setAttribute('class', 'highlight');
+        svg.appendChild(rect);
+      }
+      document.getElementById('map-view').style.display = 'flex';
+    }
+
+    function hideMap() {
+      document.getElementById('map-view').style.display = 'none';
+    }
 
     loadPhotos();
   </script>
