@@ -15,10 +15,16 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
-// 仮DB（永続化していない）
+// uploads フォルダが存在しない場合は作成
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+// メモリ上の仮DB
 let photoDB = [];
 
-// --- multer 設定 ---
+// multer 設定
 const storage = multer.diskStorage({
   destination: 'uploads/',
   filename: (_, file, cb) => {
@@ -31,42 +37,46 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   fileFilter: (_, file, cb) => {
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/heic',
-      'image/heif', 'image/webp'
+    const allowed = [
+      'image/jpeg',
+      'image/png',
+      'image/heic',
+      'image/heif',
+      'image/webp'
     ];
-    if (allowedTypes.includes(file.mimetype)) {
+    if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
       cb(new Error('許可されていないファイル形式です'));
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  }
 });
 
-// --- アップロード処理 ---
+// アップロード処理
 app.post('/upload', upload.single('photo'), async (req, res) => {
   const { comment } = req.body;
+  const ext = path.extname(req.file.originalname).toLowerCase();
   const mimetype = req.file.mimetype;
-  const originalExt = path.extname(req.file.originalname).toLowerCase();
 
-  let finalFilename = `${Date.now()}.jpg`;
+  const timestamp = Date.now();
+  let finalFilename = `${timestamp}.jpg`; // 全形式JPEGに統一
   const outputPath = path.join(__dirname, 'uploads', finalFilename);
 
   try {
-    if (['.heic', '.heif'].includes(originalExt) || ['image/heic', 'image/heif'].includes(mimetype)) {
+    if (['.heic', '.heif'].includes(ext) || ['image/heic', 'image/heif'].includes(mimetype)) {
       const inputBuffer = fs.readFileSync(req.file.path);
       const outputBuffer = await heicConvert({
         buffer: inputBuffer,
         format: 'JPEG',
         quality: 1
       });
-
       fs.writeFileSync(outputPath, outputBuffer);
-      fs.unlinkSync(req.file.path); // 元ファイル削除
+      fs.unlinkSync(req.file.path);
     } else {
-      const tempPath = outputPath + '_resized';
-
+      const tempPath = outputPath + '_tmp';
       await sharp(req.file.path)
         .rotate()
         .resize({ width: 800, height: 800, fit: 'cover' }) // 正方形に切り出し
@@ -76,9 +86,8 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
       fs.renameSync(tempPath, outputPath);
     }
 
-    // 写真情報を仮DBに保存
     const photo = {
-      id: Date.now(),
+      id: timestamp,
       url: `/uploads/${finalFilename}`,
       comment,
       room: null,
@@ -95,23 +104,22 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
   }
 });
 
-// --- 表示対象の写真だけ取得 ---
+// 写真表示用API
 app.get('/photos', (_, res) => {
-  const filtered = photoDB.filter(p => p.approved && p.room && p.floor);
-  res.json(filtered);
+  const approvedPhotos = photoDB.filter(p => p.approved && p.room && p.floor);
+  res.json(approvedPhotos);
 });
 
-// --- 管理者：全件取得 ---
+// 管理者取得
 app.get('/admin/photos', (_, res) => {
   res.json(photoDB);
 });
 
-// --- 管理者：承認・割当処理 ---
+// 管理者：部屋・階の割り当て
 app.post('/admin/assign', (req, res) => {
-  const { id, room, approved, floor } = req.body;
-  console.log('受信:', req.body);
-
+  const { id, room, floor, approved } = req.body;
   const photo = photoDB.find(p => p.id == id);
+
   if (photo) {
     photo.room = room;
     photo.floor = floor;
@@ -122,6 +130,7 @@ app.post('/admin/assign', (req, res) => {
   }
 });
 
+// 起動
 app.listen(port, () => {
-  console.log(`サーバー起動: http://localhost:${port}`);
+  console.log(`✅ サーバー起動: http://localhost:${port}`);
 });
