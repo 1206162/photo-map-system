@@ -19,7 +19,7 @@
     }
     .gallery img {
       width: 100%;
-      height: auto;
+      aspect-ratio: 1 / 1; /* ← 正方形に強制 */
       object-fit: cover;
       border-radius: 6px;
       cursor: pointer;
@@ -33,10 +33,12 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      overflow: auto; 
     }
     #map-svg-container {
       width: 100%;
       max-width: 720px;
+      max-height: 90vh;
     }
     svg {
       width: 100%;
@@ -61,7 +63,7 @@
       margin: 15px;
     }
     .button-bar a, .button-bar button {
-      background: #007BFF;
+      background: #4CAF50;
       color: white;
       padding: 10px 16px;
       text-decoration: none;
@@ -101,7 +103,7 @@
 
    <div class="button-bar">
     <a href="/index.html">写真を投稿する</a>
-    <a href="https://docs.google.com/forms/d/e/XXXXXXXXXXXXXXXXXXXXXXXXXXX/viewform" target="_blank">利用者アンケートに回答</a>
+    <a href="https://docs.google.com/forms/d/e/XXXXXXXXXXXXXXXXXXXXXXXXXXX/viewform" target="_blank">アンケートに回答</a>
   </div>
 
   <script>
