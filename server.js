@@ -59,35 +59,41 @@ const upload = multer({
 app.post('/upload', upload.single('photo'), async (req, res) => {
   const { comment } = req.body;
   const ext = path.extname(req.file.originalname).toLowerCase();
-  const mimetype = req.file.mimetype;
-
-  const timestamp = Date.now();
-  let finalFilename = `${timestamp}.jpg`; // 全形式JPEGに統一
-  const outputPath = path.join(__dirname, 'uploads', finalFilename);
+  let finalFilename;
 
   try {
-    if (['.heic', '.heif'].includes(ext) || ['image/heic', 'image/heif'].includes(mimetype)) {
+    if (ext === '.heic' || ext === '.heif' ||
+        req.file.mimetype === 'image/heic' ||
+        req.file.mimetype === 'image/heif') {
+
       const inputBuffer = fs.readFileSync(req.file.path);
       const outputBuffer = await heicConvert({
         buffer: inputBuffer,
         format: 'JPEG',
         quality: 1
       });
+
+      finalFilename = `${Date.now()}.jpg`;
+      const outputPath = path.join(__dirname, 'uploads', finalFilename);
       fs.writeFileSync(outputPath, outputBuffer);
       fs.unlinkSync(req.file.path);
+
     } else {
-      const tempPath = outputPath + '_tmp';
+      finalFilename = `${Date.now()}${ext}`;
+      const filepath = path.join(__dirname, 'uploads', finalFilename);
+      const tempPath = filepath + '_resized';
+
       await sharp(req.file.path)
         .rotate()
-        .resize({ width: 800, height: 800, fit: 'cover' }) // 正方形に切り出し
+        .resize({ width: 800 })
         .toFile(tempPath);
 
       fs.unlinkSync(req.file.path);
-      fs.renameSync(tempPath, outputPath);
+      fs.renameSync(tempPath, filepath);
     }
 
     const photo = {
-      id: timestamp,
+      id: Date.now(),
       url: `/uploads/${finalFilename}`,
       comment,
       room: null,
@@ -97,12 +103,15 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
     };
 
     photoDB.push(photo);
+    console.log('保存成功:', photo); // デバッグログ
     res.redirect('/thanks.html');
+
   } catch (err) {
     console.error('アップロード失敗:', err);
     res.status(500).send('アップロードに失敗しました');
   }
 });
+
 
 // 写真表示用API
 app.get('/photos', (_, res) => {
