@@ -91,7 +91,7 @@
         card.className = 'photo-card';
 
         const currentFloor = photo.floor || 1;
-        const rooms = roomsByFloor[floor] || [];
+        const rooms = roomsByFloor[currentFloor] || [];
 
 
         card.innerHTML = `
@@ -100,9 +100,9 @@
 
          <label>階:
           <select class="floor-select">
-            <option value="1" ${floor == 1 ? 'selected' : ''}>4階</option>
-            <option value="2" ${floor == 2 ? 'selected' : ''}>10階</option>
-            <option value="3" ${floor == 3 ? 'selected' : ''}>11階</option>
+            <option value="1" ${currentFloor == 1 ? 'selected' : ''}>4階</option>
+            <option value="2" ${currentFloor == 2 ? 'selected' : ''}>10階</option>
+            <option value="3" ${currentFloor == 3 ? 'selected' : ''}>11階</option>
           </select>
         </label>
 
