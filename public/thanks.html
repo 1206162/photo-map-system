@@ -3,59 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>アップロード完了</title>
+  <title>ありがとうございました</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f5f5;
+      background: #f0f0f0;
+      padding: 20px;
       text-align: center;
-      padding: 40px 20px;
-    }
-
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background: white;
-      padding: 30px 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
     h2 {
-      color: #4CAF50;
-      margin-bottom: 15px;
+      margin-top: 40px;
+      font-size: 1.5em;
     }
 
-    p {
-      font-size: 16px;
-      margin-bottom: 30px;
+    .buttons {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px; /* ボタン間の隙間 */
+      align-items: center;
     }
 
-    .btn {
-      display: inline-block;
-      padding: 14px 24px;
-      font-size: 16px;
+    .buttons a {
+      display: block;
+      width: 100%;
+      max-width: 300px;
+      padding: 12px 16px;
+      background: #007BFF;
       color: white;
-      background-color: #4CAF50;
-      border: none;
-      border-radius: 8px;
       text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
       font-weight: bold;
-      cursor: pointer;
     }
 
-    .btn:hover {
-      background-color: #45a049;
+    .buttons a:hover {
+      background: #0056b3;
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <h2>アップロード完了！</h2>
-    <p>ご協力ありがとうございます。</p>
-    <a href="/index.html" class="btn">別の写真を投稿する</a>
-    <a href="/map.html" class="btn">写真一覧を見る</a>
+  <h2>ご投稿ありがとうございました！</h2>
+  <p>写真は確認後に掲載されます。</p>
+
+  <div class="buttons">
+    <a href="/upload.html">別の写真を投稿する</a>
+    <a href="/map.html">写真一覧を見る</a>
   </div>
 
 </body>
