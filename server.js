@@ -1,11 +1,11 @@
 // server.js
+require('dotenv').config(); // ← .env を読み込む
+
 const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
-const sharp = require('sharp');
-const heicConvert = require('heic-convert');
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -13,88 +13,46 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
-app.use('/uploads', express.static('uploads'));
 
-// uploads フォルダが存在しない場合は作成
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
+// Cloudinary 設定
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
-// メモリ上の仮DB
-let photoDB = [];
-
-// multer 設定
-const storage = multer.diskStorage({
-  destination: 'uploads/',
-  filename: (_, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const timestamp = Date.now();
-    cb(null, `${timestamp}${ext}`);
+// Cloudinaryストレージ設定
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'uploads',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ width: 800, crop: "limit" }]
   }
 });
 
 const upload = multer({
   storage,
-  fileFilter: (_, file, cb) => {
-    const allowed = [
-      'image/jpeg',
-      'image/png',
-      'image/heic',
-      'image/heif',
-      'image/webp'
-    ];
-    if (allowed.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('許可されていないファイル形式です'));
-    }
-  },
   limits: {
-    fileSize: 5 * 1024 * 1024
+    fileSize: 5 * 1024 * 1024 // 5MB
   }
 });
 
-// アップロード処理
+// メモリ上の仮DB（本番運用ではDBに置き換えるべき）
+let photoDB = [];
+
+// 📤 写真アップロード処理
 app.post('/upload', upload.single('photo'), async (req, res) => {
-  const { comment } = req.body;
-  const ext = path.extname(req.file.originalname).toLowerCase();
-  let finalFilename;
-
   try {
-    if (ext === '.heic' || ext === '.heif' ||
-        req.file.mimetype === 'image/heic' ||
-        req.file.mimetype === 'image/heif') {
+    const { comment } = req.body;
 
-      const inputBuffer = fs.readFileSync(req.file.path);
-      const outputBuffer = await heicConvert({
-        buffer: inputBuffer,
-        format: 'JPEG',
-        quality: 1
-      });
-
-      finalFilename = `${Date.now()}.jpg`;
-      const outputPath = path.join(__dirname, 'uploads', finalFilename);
-      fs.writeFileSync(outputPath, outputBuffer);
-      fs.unlinkSync(req.file.path);
-
-    } else {
-      finalFilename = `${Date.now()}${ext}`;
-      const filepath = path.join(__dirname, 'uploads', finalFilename);
-      const tempPath = filepath + '_resized';
-
-      await sharp(req.file.path)
-        .rotate()
-        .resize({ width: 800 })
-        .toFile(tempPath);
-
-      fs.unlinkSync(req.file.path);
-      fs.renameSync(tempPath, filepath);
+    if (!req.file || !req.file.path) {
+      throw new Error('ファイルが正しくアップロードされませんでした');
     }
 
     const photo = {
       id: Date.now(),
-      url: `/uploads/${finalFilename}`,
+      url: req.file.path,         // CloudinaryのURL
       comment,
       room: null,
       floor: null,
@@ -103,28 +61,27 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
     };
 
     photoDB.push(photo);
-    console.log('保存成功:', photo); // デバッグログ
+    console.log('✅ アップロード完了:', photo);
     res.redirect('/thanks.html');
 
   } catch (err) {
-    console.error('アップロード失敗:', err);
+    console.error('❌ アップロードエラー:', err);
     res.status(500).send('アップロードに失敗しました');
   }
 });
 
-
-// 写真表示用API
+// ✅ 承認済み写真の取得
 app.get('/photos', (_, res) => {
   const approvedPhotos = photoDB.filter(p => p.approved && p.room && p.floor);
   res.json(approvedPhotos);
 });
 
-// 管理者取得
+// 👨‍💼 管理者画面用：全写真取得
 app.get('/admin/photos', (_, res) => {
   res.json(photoDB);
 });
 
-// 管理者：部屋・階の割り当て
+// 👨‍💼 管理者：部屋/階割り当て + 承認
 app.post('/admin/assign', (req, res) => {
   const { id, room, floor, approved } = req.body;
   const photo = photoDB.find(p => p.id == id);
@@ -139,7 +96,7 @@ app.post('/admin/assign', (req, res) => {
   }
 });
 
-// 起動
+// ✅ サーバー起動
 app.listen(port, () => {
-  console.log(`✅ サーバー起動: http://localhost:${port}`);
+  console.log(`🚀 サーバー起動: http://localhost:${port}`);
 });
