@@ -52,7 +52,7 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
 
     const photo = {
       id: Date.now(),
-      url: req.file.path,         // CloudinaryのURL
+      url: CLOUDINARY_URL,         // CloudinaryのURL
       comment,
       room: null,
       floor: null,
