@@ -26,6 +26,7 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'uploads',
+    public_id: `${Date.now()}`,
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
     transformation: [{ width: 800, crop: "limit" }]
   }

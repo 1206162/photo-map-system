@@ -12,6 +12,9 @@
       width: 220px;
       position: relative;
     }
+     .photo-card.saved {
+      background-color: #e6ffe6; /* 保存済みの色 */
+    }
     .photo-card img {
       max-width: 200px;
       max-height: 200px;
@@ -89,6 +92,9 @@
       photos.forEach(photo => {
         const card = document.createElement('div');
         card.className = 'photo-card';
+         if (photo.room && photo.room !== 'none') {
+          card.classList.add('saved'); // 保存済みなら色変える
+        }
 
         const currentFloor = photo.floor || 1;
         const rooms = roomsByFloor[currentFloor] || [];
